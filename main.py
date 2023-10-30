@@ -1,12 +1,17 @@
+import requests
 
+def download_picture():
+    filename = 'hubble.jpeg'
+    url = "https://upload.wikimedia.org/wikipedia/commons/3/3f/HST-SM4.jpeg"
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    response = requests.get(url)
+    response.raise_for_status()
 
+    with open(filename, 'wb') as file:
+        file.write(response.content)
 
 
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    download_picture()
 
 
