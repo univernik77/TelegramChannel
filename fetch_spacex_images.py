@@ -45,9 +45,11 @@ def main():
     parser.add_argument('id', help='Введите id запуска')
     input_id = parser.parse_args().id
 
-    fetch_spacex_last_launch(input_id, path_to_file)
+    try:
+        fetch_spacex_last_launch(input_id, path_to_file)
+    except requests.exceptions.HTTPError:
+        print('Вы ввели неверный токен.')
 
 
 if __name__ == '__main__':
     main()
-
