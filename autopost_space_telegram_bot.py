@@ -13,16 +13,16 @@ def main():
 
     bot = telegram.Bot(token=env('TELEGRAM_TOKEN'))
     images = list(os.walk(env('PATH_TO_IMAGES', default='images')))
-    list_images = images[0][2]
+    telegram_images = images[0][2]
 
     parser = argparse.ArgumentParser(
-        description='Скачивает лучшие астрономические фотографии дня'
+        description='Публикует фотографии в Телеграм-канал'
     )
     parser.add_argument(
         'time',
         nargs='?',
         default=14400,
-        help='Введите количество фотографий для скачивания',
+        help='Введите интервал между публикациями в секундах',
         type=int
     )
     input_time = parser.parse_args().time
@@ -30,18 +30,20 @@ def main():
     count = 0
     while True:
         try:
-            bot.send_document(
-                chat_id='@SpaceXNasaPictures',
-                document=open(f'images/{list_images[count]}', 'rb'))
+            collected_path = f'images/{telegram_images[count]}'
+            with open(collected_path, 'rb') as file:
+                bot.send_document(
+                    chat_id=env('CHAT_ID'),
+                    document=file)
         except telegram.error.Unauthorized:
             print('Вы ввели неверный токен.')
         except OSError:
             print('Вы ввели неверный путь к файлу.')
         count += 1
         time.sleep(input_time)
-        if count == len(list_images)-1:
+        if count == len(telegram_images) - 1:
             count = 0
-            random.shuffle(list_images)
+            random.shuffle(telegram_images)
 
 
 if __name__ == '__main__':

@@ -15,9 +15,10 @@ def main():
 
     bot = telegram.Bot(token=env('TELEGRAM_TOKEN'))
     try:
-        bot.send_document(
-            chat_id='@SpaceXNasaPictures',
-            document=open(input_path, 'rb'))
+        with open(input_path, 'rb') as file:
+            bot.send_document(
+                chat_id=env('CHAT_ID'),
+                document=file)
     except telegram.error.Unauthorized:
         print('Вы ввели неверный токен.')
     except OSError:

@@ -5,35 +5,32 @@ from pathlib import Path
 import requests
 from environs import Env
 
+from read_file_util import open_read
 
-def fetch_nasa_epic(url, path, count):
-    env = Env()
-    params = {'api_key': env('API_KEY')}
 
-    env.read_env()
+def fetch_nasa_epic(key, path, count):
+    params = {'api_key': key}
+    epic_url = 'https://api.nasa.gov/EPIC/api/natural/images'
+
     Path(path).mkdir(parents=True, exist_ok=True)
 
-    response_url = requests.get(url, params=params)
-    response_url.raise_for_status()
-    epic_images = response_url.json()
-    for number_image, image in enumerate(epic_images[:count]):
+    response = requests.get(epic_url, params=params)
+    response.raise_for_status()
+    epic_images = response.json()
+    for image_number, image in enumerate(epic_images[:count]):
         image_date = dt.strptime(image['date'], '%Y-%m-%d %H:%M:%S')
         str_image_date = dt.strftime(image_date, '%Y/%m/%d')
-        response_image = requests.get(
-            f"https://api.nasa.gov/EPIC/archive/natural/"
-            f"{str_image_date}/png/{image['image']}.png",
-            params=params
-        )
+        collected_url = (f"https://api.nasa.gov/EPIC/archive/natural/"
+                         f"{str_image_date}/png/{image['image']}.png")
+        response_image = requests.get(collected_url, params=params)
         response_image.raise_for_status()
-        with open(f'{path}/nasa_epic_{number_image}.png', 'wb') as file:
-            file.write(response_image.content)
+        collected_path = f'{path}/nasa_epic_{image_number}.png'
+        open_read(collected_path, response_image.content)
 
 
 def main():
     env = Env()
     env.read_env()
-
-    epic_url = 'https://api.nasa.gov/EPIC/api/natural/images'
     path_to_file = env('PATH_TO_IMAGES', default='images')
 
     parser = argparse.ArgumentParser(
@@ -48,10 +45,7 @@ def main():
     )
     input_count = parser.parse_args().count
 
-    try:
-        fetch_nasa_epic(epic_url, path_to_file, input_count)
-    except requests.exceptions.HTTPError:
-        print('Вы ввели неверный токен.')
+    fetch_nasa_epic(env('API_KEY'), path_to_file, input_count)
 
 
 if __name__ == '__main__':

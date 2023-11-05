@@ -4,34 +4,34 @@ from pathlib import Path
 import requests
 from environs import Env
 
+from read_file_util import open_read
 from split_text_util import split_text
 
 
+def find_launch(url):
+    response_picture = requests.get(url)
+    response_picture.raise_for_status()
+    image_launches = response_picture.json()
+    for launch in image_launches.reverse():
+        if launch['links']['flickr']['original']:
+            return launch['links']['flickr']['original']
+
+
 def fetch_spacex_last_launch(id_launch, path):
+    spacex_url = 'https://api.spacexdata.com/v5/launches/'
     Path(path.split('/')[0]).mkdir(parents=True, exist_ok=True)
 
-    response_url = requests.get(
-        f'https://api.spacexdata.com/v5/launches/{id_launch}'
-    )
-    response_url.raise_for_status()
-    spacex_images = response_url.json()['links']['flickr']['original']
-    if not spacex_images:
-        response_picture = requests.get(
-            'https://api.spacexdata.com/v5/launches'
-        )
-        response_picture.raise_for_status()
-        image_launches = response_picture.json()
-        for launch in image_launches.reverse():
-            if launch['links']['flickr']['original']:
-                spacex_images = launch['links']['flickr']['original']
-                break
+    collected_url = f'{spacex_url}{id_launch}'
+    response = requests.get(collected_url)
+    response.raise_for_status()
+    flickr_images = response.json()['links']['flickr']['original']
+    spacex_images = flickr_images if flickr_images else find_launch(spacex_url)
 
-    for number_pict, image in enumerate(spacex_images):
+    for pict_number, image in enumerate(spacex_images):
         response_image = requests.get(image)
         response_image.raise_for_status()
-        with open(f"{path}/spacex_{number_pict}{split_text(image)}",
-                  'wb') as file:
-            file.write(response_image.content)
+        collected_path = f"{path}/spacex_{pict_number}{split_text(image)}"
+        open_read(collected_path, response_image.content)
 
 
 def main():
@@ -45,10 +45,7 @@ def main():
     parser.add_argument('id', help='Введите id запуска')
     input_id = parser.parse_args().id
 
-    try:
-        fetch_spacex_last_launch(input_id, path_to_file)
-    except requests.exceptions.HTTPError:
-        print('Вы ввели неверный токен.')
+    fetch_spacex_last_launch(input_id, path_to_file)
 
 
 if __name__ == '__main__':

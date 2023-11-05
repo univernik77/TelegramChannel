@@ -4,35 +4,35 @@ from pathlib import Path
 import requests
 from environs import Env
 
+from read_file_util import open_read
 from split_text_util import split_text
 
 
-def fetch_apod(url, path, count):
-    env = Env()
+def fetch_apod(key, path, count):
     params = {
-        'api_key': env('API_KEY'),
+        'api_key': key,
         'count': count,
         'thumbs': False
     }
+    apod_url = 'https://api.nasa.gov/planetary/apod'
 
-    env.read_env()
     Path(path.split('/')[0]).mkdir(parents=True, exist_ok=True)
 
-    response_url = requests.get(url, params=params)
-    response_url.raise_for_status()
-    apod_images = response_url.json()
-    for number_image, image in enumerate(apod_images[:count]):
+    response = requests.get(apod_url, params=params)
+    response.raise_for_status()
+    apod_images = response.json()
+    for image_number, image in enumerate(apod_images[:count]):
         response_image = requests.get(image['url'])
         response_image.raise_for_status()
-        with open(f"{path}/nasa_apod_{number_image}"
-                  f"{split_text(image['url'])}", 'wb') as file:
-            file.write(response_image.content)
+        collected_path = (f"{path}/nasa_apod_{image_number}"
+                          f"{split_text(image['url'])}")
+
+        open_read(collected_path, response_image.content)
 
 
 def main():
     env = Env()
     env.read_env()
-    apod_url = 'https://api.nasa.gov/planetary/apod'
     path_to_file = env('PATH_TO_IMAGE', default='images')
 
     parser = argparse.ArgumentParser(
@@ -47,10 +47,7 @@ def main():
     )
     input_amount = parser.parse_args().amount
 
-    try:
-        fetch_apod(apod_url, path_to_file, input_amount)
-    except requests.exceptions.HTTPError:
-        print('Вы ввели неверный токен.')
+    fetch_apod(env('API_KEY'), path_to_file, input_amount)
 
 
 if __name__ == '__main__':
