@@ -1,43 +1,44 @@
 import argparse
 from pathlib import Path
 
-import requests
 from environs import Env
 
-from read_file_util import open_read
-from split_text_util import split_text
+from support_util import split_url, read_file, get_response
 
 
-def find_launch(url):
-    response_picture = requests.get(url)
-    response_picture.raise_for_status()
-    image_launches = response_picture.json()
-    for launch in image_launches.reverse():
-        if launch['links']['flickr']['original']:
-            return launch['links']['flickr']['original']
+def get_flickr_image(url, input_id):
+    response = get_response(f'{url}{input_id}')
+    return response.json()['links']['flickr']['original']
 
 
-def fetch_spacex_last_launch(id_launch, path):
-    spacex_url = 'https://api.spacexdata.com/v5/launches/'
+def check_launch_images(url, input_id):
+    flickr_images = get_flickr_image(url, input_id)
+    if not flickr_images:
+        response_launches = get_response(url)
+        images_launches = response_launches.json()
+        for launch in reversed(images_launches):
+            if launch['links']['flickr']['original']:
+                return launch['id']
+    return input_id
+
+
+def fetch_spacex_last_launch(url, input_id, path):
+
     Path(path.split('/')[0]).mkdir(parents=True, exist_ok=True)
 
-    collected_url = f'{spacex_url}{id_launch}'
-    response = requests.get(collected_url)
-    response.raise_for_status()
-    flickr_images = response.json()['links']['flickr']['original']
-    spacex_images = flickr_images if flickr_images else find_launch(spacex_url)
-
-    for pict_number, image in enumerate(spacex_images):
-        response_image = requests.get(image)
-        response_image.raise_for_status()
-        collected_path = f"{path}/spacex_{pict_number}{split_text(image)}"
-        open_read(collected_path, response_image.content)
+    spacex_images = get_flickr_image(url, input_id)
+    for image_number, image in enumerate(spacex_images):
+        response_image = get_response(image)
+        file_ext = split_url(image)
+        collected_path = f"{path}/spacex_{image_number}{file_ext}"
+        read_file(collected_path, response_image.content)
 
 
 def main():
     env = Env()
     env.read_env()
     path_to_file = env('PATH_TO_IMAGES', default='images')
+    spacex_url = 'https://api.spacexdata.com/v5/launches/'
 
     parser = argparse.ArgumentParser(
         description='Создает папку и загружает фотографии с запусков SpaceX'
@@ -45,7 +46,8 @@ def main():
     parser.add_argument('id', help='Введите id запуска')
     input_id = parser.parse_args().id
 
-    fetch_spacex_last_launch(input_id, path_to_file)
+    check_launch_id = check_launch_images(spacex_url, input_id)
+    fetch_spacex_last_launch(spacex_url, check_launch_id, path_to_file)
 
 
 if __name__ == '__main__':

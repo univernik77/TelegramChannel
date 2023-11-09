@@ -12,7 +12,7 @@ def main():
     env.read_env()
 
     bot = telegram.Bot(token=env('TELEGRAM_TOKEN'))
-    images = list(os.walk(env('PATH_TO_IMAGES', default='images')))
+    images = list(os.walk(env('PATH_TO_IMAGE', default='images')))
     telegram_images = images[0][2]
 
     parser = argparse.ArgumentParser(
@@ -27,23 +27,19 @@ def main():
     )
     input_time = parser.parse_args().time
 
-    count = 0
     while True:
         try:
-            collected_path = f'images/{telegram_images[count]}'
-            with open(collected_path, 'rb') as file:
-                bot.send_document(
-                    chat_id=env('CHAT_ID'),
-                    document=file)
+            for image in telegram_images:
+                with open(f'images/{image}', 'rb') as file:
+                    bot.send_document(
+                        chat_id=env('TG_CHAT_ID'),
+                        document=file)
         except telegram.error.Unauthorized:
             print('Вы ввели неверный токен.')
         except OSError:
             print('Вы ввели неверный путь к файлу.')
-        count += 1
         time.sleep(input_time)
-        if count == len(telegram_images) - 1:
-            count = 0
-            random.shuffle(telegram_images)
+        random.shuffle(telegram_images)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,7 @@ def main():
     try:
         with open(input_path, 'rb') as file:
             bot.send_document(
-                chat_id=env('CHAT_ID'),
+                chat_id=env('TG_CHAT_ID'),
                 document=file)
     except telegram.error.Unauthorized:
         print('Вы ввели неверный токен.')

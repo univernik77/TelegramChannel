@@ -1,11 +1,9 @@
 import argparse
 from pathlib import Path
 
-import requests
 from environs import Env
 
-from read_file_util import open_read
-from split_text_util import split_text
+from support_util import split_url, read_file, get_response
 
 
 def fetch_apod(key, path, count):
@@ -18,16 +16,14 @@ def fetch_apod(key, path, count):
 
     Path(path.split('/')[0]).mkdir(parents=True, exist_ok=True)
 
-    response = requests.get(apod_url, params=params)
-    response.raise_for_status()
-    apod_images = response.json()
+    response_images = get_response(apod_url, params)
+    apod_images = response_images.json()
     for image_number, image in enumerate(apod_images[:count]):
-        response_image = requests.get(image['url'])
-        response_image.raise_for_status()
+        file_ext = split_url(image['url'])
         collected_path = (f"{path}/nasa_apod_{image_number}"
-                          f"{split_text(image['url'])}")
-
-        open_read(collected_path, response_image.content)
+                          f"{file_ext}")
+        response_image = get_response(image['url'])
+        read_file(collected_path, response_image.content)
 
 
 def main():
@@ -47,7 +43,7 @@ def main():
     )
     input_amount = parser.parse_args().amount
 
-    fetch_apod(env('API_KEY'), path_to_file, input_amount)
+    fetch_apod(env('NASA_API_KEY'), path_to_file, input_amount)
 
 
 if __name__ == '__main__':
