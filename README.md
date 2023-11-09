@@ -26,9 +26,13 @@
 - Скачайте код
 - Основной и вспомогательные скрипты должны лежать в одной папке.
 - Установите зависимости командой  
-  ```python pip install -r requirements.txt```
+  ```python
+  pip install -r requirements.txt
+  ```
 - Запустите скрипт командой  
-  ```python python3 ...```
+  ```python
+  python3 ...
+  ```
 
 ## Переменные окружения
 
