@@ -35,11 +35,11 @@ def main():
                     bot.send_document(
                         chat_id=chat_id,
                         document=file)
+                time.sleep(input_time)
         except telegram.error.Unauthorized:
             print('Вы ввели неверный токен.')
         except OSError:
             print('Вы ввели неверный путь к файлу.')
-        time.sleep(input_time)
         random.shuffle(telegram_images)
 
 
