@@ -11,6 +11,7 @@ def main():
     env = Env()
     env.read_env()
 
+    chat_id = env('TG_CHAT_ID')
     bot = telegram.Bot(token=env('TELEGRAM_TOKEN'))
     images = list(os.walk(env('PATH_TO_IMAGE', default='images')))
     telegram_images = images[0][2]
@@ -32,7 +33,7 @@ def main():
             for image in telegram_images:
                 with open(f'images/{image}', 'rb') as file:
                     bot.send_document(
-                        chat_id=env('TG_CHAT_ID'),
+                        chat_id=chat_id,
                         document=file)
         except telegram.error.Unauthorized:
             print('Вы ввели неверный токен.')
